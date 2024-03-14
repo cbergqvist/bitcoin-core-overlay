@@ -1,3 +1,5 @@
+# This is based on gist from 0xB10C.
+# Could do with some options for toggling gcc/clang and bitcoin-qt on/off etc.
 { pkgs ? import <nixpkgs> {} }:
 
 pkgs.mkShell {
@@ -12,16 +14,6 @@ pkgs.mkShell {
       sqlite
       db48
 
-      # multiprocess
-      libxkbcommon
-      fontconfig
-      freetype
-      xorg.libxcb
-      xorg.xcbutilwm
-      xorg.xcbutilimage
-      xorg.xcbutilkeysyms
-      xorg.xcbutilrenderutil
-
       # tests
       hexdump
 
@@ -34,16 +26,14 @@ pkgs.mkShell {
       # only needed for older versions
       # openssl
 
-      # functional tests
+      # functional tests & linting
       python3
-      python39Packages.flake8
-      python39Packages.lief
       python3Packages.flake8
+      python3Packages.lief
       python3Packages.autopep8
-      python39Packages.mypy
+      python3Packages.mypy
       python3Packages.requests
       python3Packages.pyzmq
-      python39Packages.pyzmq
 
       # benchmarking
       python3Packages.pyperf
@@ -56,31 +46,47 @@ pkgs.mkShell {
       linuxPackages.bpftrace
       linuxPackages.bcc
 
-      # compiler output caching
+      # compiler output caching per
+      # https://github.com/bitcoin/bitcoin/blob/master/doc/productivity.md#cache-compilations-with-ccache
       ccache
 
-      # clang-format
-      clang-tools_17
-      #clang++ <-- used before needing clang-tidy
-      # https://github.com/bitcoin/bitcoin/blob/master/doc/developer-notes.md#running-clang-tidy
+      # clang-format, clang-tidy
+      # reference: https://github.com/bitcoin/bitcoin/blob/master/doc/developer-notes.md#running-clang-tidy
       # $ a && c && m clean && bear --config src/.bear-tidy-config -- make -j $(nproc)
+      clang-tools_17
+      bear
+
+      # Clang compiler & LLVM debugger
       clang_17
       lldb_17
-      bear
 
       # bitcoin-qt
       qt5.qtbase
-      qt5.qttools # for lrelease
+      # required for bitcoin-qt for "LRELEASE", also depends on upcoming fix to build-aux/m4/bitcoin_qt.m4
+      qt5.qttools
 
       # Sublime Text LLDB Debugger made me
       zlib
 
       ## additional shell niceties
       jq
+
+      # for multiprocess PRs
+      libxkbcommon
+      fontconfig
+      freetype
+      xorg.libxcb
+      xorg.xcbutilwm
+      xorg.xcbutilimage
+      xorg.xcbutilkeysyms
+      xorg.xcbutilrenderutil
     ];
 
     # needed in 'autogen.sh'
     LIBTOOLIZE = "libtoolize";
+
+    # expose debugger server to editor integrations
+    LLDB_DEBUGSERVER_PATH = "${pkgs.lldb_17}/bin/lldb-server";
 
     # Fixes xcb plugin error when trying to launch bitcoin-qt
     QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins/platforms";
@@ -130,15 +136,18 @@ pkgs.mkShell {
       alias ut="make check"
       # functional tests
       alias ft="python3 test/functional/test_runner.py"
+      # assumes prior mounting of /mnt/tmp/ as described in
+      # https://github.com/bitcoin/bitcoin/blob/master/test/README.md#speed-up-test-runs-with-a-ram-disk
+      alias ftm="ft --cachedir=/mnt/tmp/cache --tmpdir=/mnt/tmp"
       # all tests
-      alias t="ut && ft"
+      alias t="ut && ftm"
 
       # additional alias
       alias b="bitcoin-cli"
 
+      echo "adding $$PWD/src to $$PATH to make running built binaries more natural"
       export PATH=$PATH:$PWD/src
-      export LLDB_DEBUGSERVER_PATH=${pkgs.lldb_17}/bin/lldb-server
 
-      alias a b c m c_fast cm acm acm_nw acm_fast ut ft t
+      alias a c m c_fast cm acm acm_nw acm_fast ut ft ftm t b
     '';
 }
