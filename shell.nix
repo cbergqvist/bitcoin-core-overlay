@@ -43,11 +43,9 @@ pkgs.mkShell {
       python39Packages.mypy
       python3Packages.requests
       python3Packages.pyzmq
-      #python310Packages.pyzmq
       python39Packages.pyzmq
 
-      ## benchmarking
-      # HAD to disable due to failing patch
+      # benchmarking
       python3Packages.pyperf
 
       # debugging
@@ -95,10 +93,15 @@ pkgs.mkShell {
       echo "Bitcoin Core build nix-shell"
       echo ""
 
-      echo "adding bcc to PYTHONPATH: ${pkgs.linuxPackages.bcc}/lib/python3.10/site-packages"
-      echo "this breaks if were not python3.10 anymore"
-      export PYTHONPATH="${pkgs.linuxPackages.bcc}/lib/python3.10/site-packages:$PYTHONPATH"
-      echo ""
+      BCC_EGG=${pkgs.linuxPackages.bcc}/lib/python3.11/site-packages/bcc-0.29.1-py3.11.egg
+
+      echo "adding bcc egg to PYTHONPATH: $BCC_EGG"
+      if [ -f $BCC_EGG ]; then
+        export PYTHONPATH="$PYTHONPATH:$BCC_EGG"
+        echo ""
+      else
+        echo "The bcc egg $BCC_EGG does not exist. Maybe the python or bcc version is different?"
+      fi
 
       # autogen
       alias a="sh autogen.sh"
@@ -130,7 +133,7 @@ pkgs.mkShell {
       # all tests
       alias t="ut && ft"
 
-      ## Additional alias
+      # additional alias
       alias b="bitcoin-cli"
 
       export PATH=$PATH:$PWD/src
@@ -138,6 +141,4 @@ pkgs.mkShell {
 
       alias a b c m c_fast cm acm acm_nw acm_fast ut ft t
     '';
-
-    # $ LLDB_DEBUGSERVER_PATH=/nix/store/0n0wi2dwzxv7nmxlbay361cpkbs3hsvz-lldb-17.0.6/bin/lldb-server subl bitcoin-core.sublime-project
 }
