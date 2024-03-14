@@ -1,0 +1,98 @@
+{
+	"build_systems":
+	[{
+	    "cmd": ["python", "$file"],
+	    "selector": "source.python",
+	    //"file_regex": "^\\s*File \"(...*?)\", line ([0-9]*)",
+		"file_patterns": ["*.py"],
+	},
+	{
+		"cmd": "make -j 16",
+		"keyfiles": "Makefile",
+	}],
+	"folders":
+	[
+		{
+			"path": ".",
+		}
+	],
+	"debugger_tasks": [
+		{
+			"name": "Compile",
+			"working_dir": "${project_path}",
+			"shell_cmd": "m",//"clang++ -std=c++14 -g main.cpp -o test",
+			"file_regex": "(..[^:]*):([0-9]+):([0-9]+)?:? error: (.*)",
+		},
+	],
+	"debugger_configurations":
+	[
+		{
+			"name": "C++ (Console)",
+			"type": "lldb",
+			"request": "launch",
+			//"pre_debug_task": "Compile",
+			"program": "${project_path}/src/bitcoind",
+			"args": [],
+			"cwd": "${project_path}",
+			"terminal": "console",
+		},
+		{
+			"name": "C++ (Integrated Terminal)",
+			"type": "lldb",
+			"request": "launch",
+			//"pre_debug_task": "Compile",
+			"program": "${project_path}/src/bitcoind",
+			"cwd": "${project_path}",
+			"terminal": "integrated",
+		},
+		{
+			"name": "C++ (bitcoind External Terminal)",
+			"type": "lldb",
+			"request": "launch",
+			//"pre_debug_task": "Compile",
+			"program": "${project_path}/src/bitcoind",
+			"args": [
+				"-seednode=seed.btc.petertodd.net",
+				"-seednode=seed.bitcoin.sprovoost.nl",
+				"-seednode=dnsseed.emzy.de",
+				"-seednode=seed.bitcoin.wiz.biz",
+				"-seednode=seed.bitcoin.sipa.be",
+				"-seednode=dnsseed.bluematt.me",
+				"-seednode=dnsseed.bitcoin.dashjr.org",
+				"-seednode=seed.bitcoinstats.com",
+				"-seednode=seed.bitcoin.jonasschnelli.ch",
+			],
+			"cwd": "${project_path}",
+			"terminal": "external",
+		},
+		{
+			"name": "C++ (test_bitcoin External Terminal)",
+			"type": "lldb",
+			"request": "launch",
+			//"pre_debug_task": "Compile",
+			"program": "${project_path}/src/test/test_bitcoin",
+			"args": [
+				"-t",
+				"argsman_tests",
+				"--",
+				"-testdatadir=/mnt/tmp",
+			],
+			"cwd": "${project_path}",
+			"terminal": "external",
+		},
+		{
+			"name": "C++ (Attach)",
+			"type": "lldb",
+			"request": "attach",
+			"program": "${project_path}/src/bitcoind",
+			//"pid": "${command:pickProcess}" // sublime text 4 only
+		},
+
+		{
+			"name": "Python",
+			"type": "python",
+			"request": "launch",
+			"program": "${project_path}/test/functional/test_runner.py",
+		},		
+	],
+}
