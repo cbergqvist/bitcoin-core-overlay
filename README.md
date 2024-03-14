@@ -1,0 +1,1 @@
+This repo contains misc files I use when working with the Bitcoin Core codebase.
