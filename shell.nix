@@ -70,6 +70,10 @@ pkgs.mkShell {
       lldb_17
       bear
 
+      # bitcoin-qt
+      qt5.qtbase
+      qt5.qttools # for lrelease
+
       # Sublime Text LLDB Debugger made me
       zlib
 
@@ -79,6 +83,9 @@ pkgs.mkShell {
 
     # needed in 'autogen.sh'
     LIBTOOLIZE = "libtoolize";
+
+    # Fixes xcb plugin error when trying to launch bitcoin-qt
+    QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins/platforms";
 
     # needed for 'configure' to find boost
     # Run ./configure with the argument '--with-boost-libdir=\$NIX_BOOST_LIB_DIR'"
@@ -98,7 +105,7 @@ pkgs.mkShell {
 
       # configure
       # Using Clang instead of GCC after tip from Josi Bake that it finds shadowed variables better.
-      alias c="./configure --with-boost-libdir=\$NIX_BOOST_LIB_DIR CXX=clang++ CC=clang CXXFLAGS=\"-O0 -g\" CFLAGS=\"-O0 -g\" --enable-debug --without-gui"
+      alias c="./configure --with-boost-libdir=\$NIX_BOOST_LIB_DIR CXX=clang++ CC=clang CXXFLAGS=\"-O0 -g\" CFLAGS=\"-O0 -g\" --enable-debug"
       alias c_no-wallet="./configure --with-boost-libdir=\$NIX_BOOST_LIB_DIR --disable-wallet CXX=clang++ CC=clang"
       alias c_fast="./configure --with-boost-libdir=\$NIX_BOOST_LIB_DIR --disable-wallet --disable-tests --disable-fuzz --disable-bench -disable-fuzz-binary CXX=clang++ CC=clang"
       alias c_fast_wallet="./configure --with-boost-libdir=\$NIX_BOOST_LIB_DIR --disable-tests --disable-bench CXX=clang++ CC=clang"
@@ -127,6 +134,7 @@ pkgs.mkShell {
       alias b="bitcoin-cli"
 
       export PATH=$PATH:$PWD/src
+      export LLDB_DEBUGSERVER_PATH=${pkgs.lldb_17}/bin/lldb-server
 
       alias a b c m c_fast cm acm acm_nw acm_fast ut ft t
     '';
