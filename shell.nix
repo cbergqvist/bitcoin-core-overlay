@@ -1,4 +1,4 @@
-# This is based on gist from 0xB10C.
+# This is based on a gist from 0xB10C.
 # Could do with some options for toggling gcc/clang and bitcoin-qt on/off etc.
 { pkgs ? import <nixpkgs> {} }:
 
@@ -62,7 +62,7 @@ pkgs.mkShell {
 
       # bitcoin-qt
       qt5.qtbase
-      # required for bitcoin-qt for "LRELEASE", also depends on upcoming fix to build-aux/m4/bitcoin_qt.m4
+      # required for bitcoin-qt for "LRELEASE" etc
       qt5.qttools
 
       # Sublime Text LLDB Debugger made me
@@ -114,7 +114,7 @@ pkgs.mkShell {
 
       # configure
       # Using Clang instead of GCC after tip from Josi Bake that it finds shadowed variables better.
-      alias c="./configure --with-boost-libdir=\$NIX_BOOST_LIB_DIR CXX=clang++ CC=clang CXXFLAGS=\"-O0 -g\" CFLAGS=\"-O0 -g\" --enable-debug"
+      alias c="./configure --with-boost-libdir=\$NIX_BOOST_LIB_DIR CXX=clang++ CC=clang CXXFLAGS=\"-O0 -g\" CFLAGS=\"-O0 -g\" --enable-debug --with-qt-bindir=${pkgs.qt5.qtbase.dev}/bin:${pkgs.qt5.qttools.dev}/bin"
       alias c_no-wallet="./configure --with-boost-libdir=\$NIX_BOOST_LIB_DIR --disable-wallet CXX=clang++ CC=clang"
       alias c_fast="./configure --with-boost-libdir=\$NIX_BOOST_LIB_DIR --disable-wallet --disable-tests --disable-fuzz --disable-bench -disable-fuzz-binary CXX=clang++ CC=clang"
       alias c_fast_wallet="./configure --with-boost-libdir=\$NIX_BOOST_LIB_DIR --disable-tests --disable-bench CXX=clang++ CC=clang"
