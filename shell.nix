@@ -1,7 +1,34 @@
 # This is based on a gist from 0xB10C.
 # Could do with some options for toggling gcc/clang and bitcoin-qt on/off etc.
-{ pkgs ? import <nixpkgs> {} }:
+{ pkgs ? import <nixpkgs> {}
+, withGui ? false
+, withClang ? false
+, withDebug ? false
+, withIncompatibleBdb ? false
+, withSuppressExternalWarnings ? false }:
+let
+  inherit (pkgs.lib) optionals;
+  baseConfigureFlags = [
+    "--with-boost-libdir=\$NIX_BOOST_LIB_DIR"
+  ] ++ optionals withClang [
+    "CXX=clang++"
+    "CC=clang"
+  ];
 
+  extendedConfigureFlags = [
+  ] ++ optionals withIncompatibleBdb [
+    "--with-incompatible-bdb"
+  ] ++ optionals withSuppressExternalWarnings [
+    "--enable-suppress-external-warnings"
+  ] ++ optionals withGui [
+    "--with-gui=qt5"
+    "--with-qt-bindir=${pkgs.qt5.qtbase.dev}/bin:${pkgs.qt5.qttools.dev}/bin"
+  ] ++ optionals withDebug [
+    "CXXFLAGS=\\\"-O0 -g\\\""
+    "CFLAGS=\\\"-O0 -g\\\""
+    "--enable-debug"
+  ];
+in
 pkgs.mkShell {
     nativeBuildInputs = with pkgs; [
       autoconf
@@ -12,6 +39,8 @@ pkgs.mkShell {
       libevent
       zeromq
       sqlite
+
+      # Berkeley DB 4.8
       db48
 
       # tests
@@ -60,11 +89,6 @@ pkgs.mkShell {
       clang_17
       lldb_17
 
-      # bitcoin-qt
-      qt5.qtbase
-      # required for bitcoin-qt for "LRELEASE" etc
-      qt5.qttools
-
       # Sublime Text LLDB Debugger made me
       zlib
 
@@ -80,6 +104,11 @@ pkgs.mkShell {
       xorg.xcbutilimage
       xorg.xcbutilkeysyms
       xorg.xcbutilrenderutil
+    ] ++ lib.optionals withGui [
+      # bitcoin-qt
+      qt5.qtbase
+      # required for bitcoin-qt for "LRELEASE" etc
+      qt5.qttools
     ];
 
     # needed in 'autogen.sh'
@@ -89,10 +118,9 @@ pkgs.mkShell {
     LLDB_DEBUGSERVER_PATH = "${pkgs.lldb_17}/bin/lldb-server";
 
     # Fixes xcb plugin error when trying to launch bitcoin-qt
-    QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins/platforms";
+    QT_QPA_PLATFORM_PLUGIN_PATH = if withGui then "${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins/platforms" else "";
 
     # needed for 'configure' to find boost
-    # Run ./configure with the argument '--with-boost-libdir=\$NIX_BOOST_LIB_DIR'"
     NIX_BOOST_LIB_DIR = "${pkgs.boost}/lib";
 
     shellHook = ''
@@ -114,10 +142,10 @@ pkgs.mkShell {
 
       # configure
       # Using Clang instead of GCC after tip from Josi Bake that it finds shadowed variables better.
-      alias c="./configure --with-boost-libdir=\$NIX_BOOST_LIB_DIR CXX=clang++ CC=clang CXXFLAGS=\"-O0 -g\" CFLAGS=\"-O0 -g\" --enable-debug --with-qt-bindir=${pkgs.qt5.qtbase.dev}/bin:${pkgs.qt5.qttools.dev}/bin"
-      alias c_no-wallet="./configure --with-boost-libdir=\$NIX_BOOST_LIB_DIR --disable-wallet CXX=clang++ CC=clang"
-      alias c_fast="./configure --with-boost-libdir=\$NIX_BOOST_LIB_DIR --disable-wallet --disable-tests --disable-fuzz --disable-bench -disable-fuzz-binary CXX=clang++ CC=clang"
-      alias c_fast_wallet="./configure --with-boost-libdir=\$NIX_BOOST_LIB_DIR --disable-tests --disable-bench CXX=clang++ CC=clang"
+      alias c="./configure ${builtins.concatStringsSep " " baseConfigureFlags} ${builtins.concatStringsSep " " extendedConfigureFlags}"
+      alias c_no-wallet="./configure --disable-wallet ${builtins.concatStringsSep " " baseConfigureFlags}"
+      alias c_fast="./configure --disable-wallet --disable-tests --disable-fuzz --disable-bench -disable-fuzz-binary ${builtins.concatStringsSep " " baseConfigureFlags}"
+      alias c_fast_wallet="./configure --disable-tests --disable-bench ${builtins.concatStringsSep " " baseConfigureFlags}"
 
       # make
       alias m="make -j"$(($(nproc)+1))
@@ -145,7 +173,7 @@ pkgs.mkShell {
       # additional alias
       alias b="bitcoin-cli"
 
-      echo "adding $$PWD/src to $$PATH to make running built binaries more natural"
+      echo "adding \$PWD/src to \$PATH to make running built binaries more natural"
       export PATH=$PATH:$PWD/src
 
       alias a c m c_fast cm acm acm_nw acm_fast ut ft ftm t b
