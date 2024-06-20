@@ -87,7 +87,7 @@ pkgs.mkShell {
       clang_17
       lldb_17
 
-      # Sublime Text LLDB Debugger made me
+      # LLDB plugin made me
       zlib
 
       ## additional shell niceties
@@ -114,6 +114,8 @@ pkgs.mkShell {
 
     # expose debugger server to editor integrations
     LLDB_DEBUGSERVER_PATH = "${pkgs.lldb_17}/bin/lldb-server";
+    # For codelldb debugger
+    LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [ pkgs.zlib ]}";
 
     # Fixes xcb plugin error when trying to launch bitcoin-qt
     QT_QPA_PLATFORM_PLUGIN_PATH = if withGui then "${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins/platforms" else "";
