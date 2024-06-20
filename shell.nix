@@ -24,8 +24,6 @@ let
     "--with-gui=qt5"
     "--with-qt-bindir=${pkgs.qt5.qtbase.dev}/bin:${pkgs.qt5.qttools.dev}/bin"
   ] ++ optionals withDebug [
-    "CXXFLAGS=\\\"-O0 -g\\\""
-    "CFLAGS=\\\"-O0 -g\\\""
     "--enable-debug"
   ];
 in
