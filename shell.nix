@@ -28,6 +28,10 @@ let
   ];
 in
 pkgs.mkShell {
+  # Modifies the Nix clang++ wrapper to avoid warning:
+  # "_FORTIFY_SOURCE requires compiling with optimization (-O)"
+  hardeningDisable = if withDebug then [ "all" ] else [];
+
     nativeBuildInputs = with pkgs; [
       autoconf
       automake
